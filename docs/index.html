@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyTrickle Docs</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>PyTrickle</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#cli">CLI Guide</a></li>
+                <li><a href="#examples">Examples</a></li>
+                <li><a href="codemap.html">Code Map</a></li>
+                <li><a href="https://github.com/livepeer/pytrickle" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>PyTrickle</h1>
+            <p class="subtitle">High-performance Python framework for real-time video streaming and processing</p>
+            <div class="hero-buttons">
+                <a href="#installation" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/livepeer/pytrickle" class="btn btn-secondary" target="_blank">View on GitHub</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>PyTrickle provides a complete Python framework for real-time video and audio streaming with custom processing. Built on the trickle protocol, it enables you to:</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Real-time Processing</h3>
+                    <p>Process live video streams with your custom Python functions using PyTorch tensors</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Stream Management</h3>
+                    <p>Start, stop, and monitor streams via HTTP REST API</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Dynamic Parameters</h3>
+                    <p>Update processing parameters in real-time without restarting</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Audio Support</h3>
+                    <p>Handles mono, stereo, and multi-channel audio processing</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Extensible</h3>
+                    <p>Easy to add custom frame processing algorithms and AI models</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Reliable</h3>
+                    <p>Automatic reconnection and error recovery built-in</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="installation">
+            <h2>Installation</h2>
+            <h3>Prerequisites</h3>
+            <ul>
+                <li>Python 3.11 or higher</li>
+                <li>uv installation: <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank">https://docs.astral.sh/uv/getting-started/installation/</a> (optional)</li>
+            </ul>
+            
+            <h3>Install PyTrickle</h3>
+            <div class="code-block">
+                <pre><code># Clone the repository
+git clone https://github.com/livepeer/pytrickle.git
+cd pytrickle
+
+# Create a virtual environment (optional but recommended)
+uv venv .virtualenv --python python3.11
+source .virtualenv/bin/activate
+
+# Install dependencies
+uv pip install -r requirements.txt
+
+# Install PyTrickle
+uv pip install -e .</code></pre>
+            </div>
+
+            <h3>Verify Installation</h3>
+            <div class="code-block">
+                <pre><code># Test the CLI
+pytrickle list</code></pre>
+            </div>
+        </section>
+
+        <section id="cli">
+            <h2>CLI Guide</h2>
+            <p>PyTrickle provides a powerful CLI tool to scaffold streaming pipeline applications quickly. The CLI helps you create starter apps from pre-built templates.</p>
+
+            <h3>List Available Templates</h3>
+            <p>View all available templates with descriptions:</p>
+            <div class="code-block">
+                <pre><code>pytrickle list</code></pre>
+            </div>
+            <p>This will display:</p>
+            <div class="code-block">
+                <pre><code>Available templates:
+
+  grayscale_chipmunk   Example demonstrating decorator-based handlers that styli...
+  passthrough          Minimal passthrough example for PyTrickle
+  process_video        OpenCV Green Processor using decorator-based handlers
+
+Usage: pytrickle init &lt;app_name&gt; --template &lt;template_name&gt;</code></pre>
+            </div>
+
+            <h3>Create a New Pipeline App</h3>
+            <p>Use the <code>pytrickle init</code> command to scaffold a new application:</p>
+            
+            <h4>Basic Usage</h4>
+            <div class="code-block">
+                <pre><code># Create app from default template (passthrough)
+pytrickle init my_app
+
+# Create app from specific template
+pytrickle init my_video_app --template process_video
+
+# Specify custom port
+pytrickle init my_app --template grayscale_chipmunk --port 9000
+
+# Create in specific directory
+pytrickle init my_app --out ./apps/ --force</code></pre>
+            </div>
+
+            <h4>Command Options</h4>
+            <table class="options-table">
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                        <th>Default</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>name</code></td>
+                        <td>App name (used in service name and filename)</td>
+                        <td>Required</td>
+                    </tr>
+                    <tr>
+                        <td><code>--template, -t</code></td>
+                        <td>Template to use</td>
+                        <td>passthrough</td>
+                    </tr>
+                    <tr>
+                        <td><code>--port</code></td>
+                        <td>Port to bind the server</td>
+                        <td>8000</td>
+                    </tr>
+                    <tr>
+                        <td><code>--out</code></td>
+                        <td>Output file or directory</td>
+                        <td>./ (current dir)</td>
+                    </tr>
+                    <tr>
+                        <td><code>--force</code></td>
+                        <td>Overwrite target if exists</td>
+                        <td>False</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Running Your App</h3>
+            <p>Once created, run your app with:</p>
+            <div class="code-block">
+                <pre><code>python my_app.py</code></pre>
+            </div>
+        </section>
+
+        <section id="templates">
+            <h2>Available Templates</h2>
+            
+            <div class="template-card">
+                <h3>1. Passthrough Template</h3>
+                <p><strong>Use Case:</strong> Starting point for building custom processing pipelines</p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>Minimal example that passes frames through unchanged</li>
+                    <li>Demonstrates basic structure and decorator patterns</li>
+                    <li>Includes model loader, video/audio handlers, parameter updates</li>
+                    <li>Perfect for understanding the framework</li>
+                </ul>
+                <div class="code-block">
+                    <pre><code>pytrickle init my_passthrough --template passthrough</code></pre>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <h3>2. Grayscale Chipmunk Template</h3>
+                <p><strong>Use Case:</strong> Video and audio processing example</p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>Converts video frames to grayscale using PyTorch</li>
+                    <li>Applies pitch-shifting to audio (chipmunk effect)</li>
+                    <li>Demonstrates real-time parameter updates</li>
+                    <li>Shows how to work with both video and audio streams</li>
+                </ul>
+                <div class="code-block">
+                    <pre><code>pytrickle init my_effects --template grayscale_chipmunk</code></pre>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <h3>3. Process Video Template</h3>
+                <p><strong>Use Case:</strong> OpenCV-based video processing</p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>Applies green tint effect to video frames</li>
+                    <li>Uses OpenCV for image processing</li>
+                    <li>Configurable processing intensity</li>
+                    <li>Great for learning video only processing while audio is passthrough</li>
+                </ul>
+                <div class="code-block">
+                    <pre><code>pytrickle init my_processor --template process_video</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="examples">
+            <h2>Code Examples</h2>
+            
+            <h3>Basic Pipeline Structure</h3>
+            <p>All PyTrickle applications follow this decorator-based pattern:</p>
+            <div class="code-block">
+                <pre><code>from pytrickle import StreamProcessor, VideoFrame, AudioFrame
+from pytrickle.decorators import (
+    video_handler, audio_handler, model_loader,
+    param_updater, on_stream_stop, on_stream_start
+)
+
+class MyHandlers:
+    def __init__(self):
+        self.config = {}
+    
+    @model_loader
+    async def load(self, **kwargs):
+        """Initialize resources when stream starts"""
+        # Load your AI model here
+        pass
+    
+    @video_handler
+    async def handle_video(self, frame: VideoFrame) -> VideoFrame:
+        """Process each video frame"""
+        tensor = frame.tensor
+        # Apply your processing
+        return frame.replace_tensor(tensor)
+    
+    @audio_handler
+    async def handle_audio(self, frame: AudioFrame) -> list[AudioFrame]:
+        """Process each audio frame"""
+        samples = frame.samples
+        # Apply your processing
+        return [frame.replace_samples(samples)]
+    
+    @param_updater
+    async def update_params(self, params: dict):
+        """Update parameters in real-time"""
+        self.config.update(params)
+    
+    @on_stream_stop
+    async def on_stop(self):
+        """Cleanup when stream stops"""
+        pass
+
+    @on_stream_start
+    async def on_start(self):
+        """Initialize when stream starts"""
+        pass
+
+async def main():
+    handlers = MyHandlers()
+    processor = StreamProcessor.from_handlers(
+        handlers, name="my-app", port=8000
+    )
+    await processor.run_forever()
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())</code></pre>
+            </div>
+
+            <h3>BYOC integration usage</h3>
+            <p>We introduce what is byoc and how to setup the gateway and orchestrator here ....Once your app is running, register the http endpoint url in your orchestrator.</p>
+            
+            <h4>Start Processing</h4>
+            <p>When you start the livepeer-app-pipelines ui, you will be able to start streaming using your webcam and get the processed video back on the ui.
+                .... link to the ui documentation and byoc setup...... will happen here
+            </p>
+        </section>
+
+        <section id="pipeline-creation">
+            <h2>Creating a Custom Pipeline</h2>
+            <p>Follow these steps to create your own video processing pipeline:</p>
+            
+            <div class="step">
+                <h3>Step 1: Scaffold Your App</h3>
+                <div class="code-block">
+                    <pre><code>pytrickle init my_pipeline --template passthrough --port 8000</code></pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Step 2: Add Your Processing Logic</h3>
+                <p>Edit the generated file and modify the <code>handle_video</code> method:</p>
+                <div class="code-block">
+                    <pre><code>@video_handler
+async def handle_video(self, frame: VideoFrame) -> VideoFrame:
+    tensor = frame.tensor  # PyTorch tensor (H, W, C)
+    
+    # Your custom processing here
+    # Example: Apply your AI model
+    processed = your_model(tensor)
+    
+    return frame.replace_tensor(processed)</code></pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Step 3: Run Your Pipeline</h3>
+                <div class="code-block">
+                    <pre><code>python my_pipeline.py</code></pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Step 4: Test with local setup</h3>
+                <p>We might need to add a local test setup that runs a tricle server and sends video to pytrickle for 
+                    processing so the user can verify the validity of the pipeline without having to connect it to the orchestrator.</p>
+
+            </div>
+        </section>
+
+        <section id="resources">
+            <h2>📚 Additional Resources</h2>
+            <ul>
+                <li><a href="codemap.html">Code Map - Project Architecture</a></li>
+                <li><a href="https://github.com/livepeer/pytrickle" target="_blank">GitHub Repository</a></li>
+                <li><a href="https://github.com/livepeer/pytrickle/tree/main/examples" target="_blank">Example Projects</a></li>
+                <li><a href="https://github.com/livepeer/pytrickle/issues" target="_blank">Report Issues</a></li>
+            </ul>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 PyTrickle. Licensed under MIT License.</p>
+            <p>Built for real-time video streaming and processing.</p>
+        </div>
+    </footer>
+</body>
+</html>

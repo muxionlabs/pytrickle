@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyTrickle Code Map - Architecture and Features</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>PyTrickle</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#modules">Modules</a></li>
+                <li><a href="#workflow">Workflow</a></li>
+                <li><a href="https://github.com/livepeer/pytrickle" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>PyTrickle Code Map</h1>
+            <p class="subtitle">Understanding the architecture and capabilities of PyTrickle</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <section id="architecture">
+            <h2>🏗️ System Architecture</h2>
+            <p>PyTrickle is built with a modular architecture that separates concerns and enables flexible video processing pipelines.</p>
+            
+            <div class="architecture-diagram">
+                <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      Client Application                     │
+│                    (Your Python Code)                       │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    StreamProcessor                          │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │   Decorators (@video_handler, @audio_handler, ...)  │    │
+│  └─────────────────────────────────────────────────────┘    │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+┌──────────────┐ ┌──────────┐ ┌────────────────┐
+│ HTTP Server  │ │  Frame   │ │ TrickleProtocol│
+│   (aiohttp)  │ │Processor │ │  (coordination)│
+└──────────────┘ └──────────┘ └────────────────┘
+        │              │              │
+        │         ┌────┴────┐         │
+        │         ▼         ▼         │
+        │   ┌─────────┐ ┌─────────┐   │
+        │   │ Video   │ │ Audio   │   │
+        │   │Handler  │ │Handler  │   │
+        │   └─────────┘ └─────────┘   │
+        │                             │
+        └────────────┬──────────────-─┘
+                     │
+         ┌───────────┼───────────────────────────────────────────────┐
+         ▼           ▼                                               ▼
+    ┌────────┐  ┌────────┐                                   ┌────────────────────┐
+    │Decoder │  │Encoder │                                   │ TrickleServer      │
+    │ (PyAV) │  │ (PyAV) │                                   │(subscribe/publish) │
+    └────────┘  └────────┘                                   └─────────────-----──┘
+         ▲             │                                              ▲
+         │             │                                              │
+         │      ┌──────┴──────┐                                ┌──────┴──────┐
+         │      │ TrickleSub  │                                │ TricklePub  │
+         │      │  (HTTP GET) │                                │ (HTTP POST) │
+         │      └─────────────┘                                └─────────────┘
+                </pre>
+            </div>
+
+            <h3>Data Flow</h3>
+            <div class="code-block">
+                <pre><code>Input Stream (Trickle subscribe URL)
+    ↓
+TrickleSubscriber (HTTP GET)
+    ↓
+Decoder (PyAV)
+    ↓
+Frame Objects (VideoFrame/AudioFrame)
+    ↓
+Your Handlers (@video_handler, @audio_handler)
+    ↓
+Processed Frame Objects
+    ↓
+Encoder (PyAV)
+    ↓
+TricklePublisher (HTTP POST)
+    ↓
+Output Stream (Trickle publish URL)</code></pre>
+            </div>
+        </section>
+
+        <section id="core-components">
+            <h2>Core Components</h2>
+
+            <div class="template-card">
+                <h3>1. StreamProcessor</h3>
+                <p><strong>Location:</strong> <code>pytrickle/stream_processor.py</code></p>
+                <p><strong>Purpose:</strong> High-level API that orchestrates the entire pipeline</p>
+                <p><strong>Key Features:</strong></p>
+                <ul>
+                    <li>Manages HTTP server for external control</li>
+                    <li>Coordinates frame processing lifecycle</li>
+                    <li>Handles stream start/stop operations</li>
+                    <li>Provides decorator-based handler registration</li>
+                </ul>
+                <div class="code-block">
+                    <pre><code># Create processor from handlers
+processor = StreamProcessor.from_handlers(
+    handlers,
+    name="my-processor",
+    port=8000
+)</code></pre>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <h3>2. Frame Processor</h3>
+                <p><strong>Location:</strong> <code>pytrickle/frame_processor.py</code></p>
+                <p><strong>Purpose:</strong> Executes user-defined processing logic on frames</p>
+                <p><strong>Key Features:</strong></p>
+                <ul>
+                    <li>Async processing of video and audio frames</li>
+                    <li>Model loading and initialization</li>
+                    <li>Parameter updates during runtime</li>
+                    <li>Resource cleanup on stream stop</li>
+                </ul>
+            </div>
+
+            <div class="template-card">
+                <h3>3. Trickle Client</h3>
+                <p><strong>Location:</strong> <code>pytrickle/client.py</code></p>
+                <p><strong>Purpose:</strong> Handles communication with trickle servers</p>
+                <p><strong>Key Features:</strong></p>
+                <ul>
+                    <li>Subscribe to input streams</li>
+                    <li>Publish to output streams</li>
+                    <li>Automatic reconnection on failure</li>
+                    <li>Frame queueing and flow control</li>
+                </ul>
+            </div>
+
+            <div class="template-card">
+                <h3>4. Decoder/Encoder</h3>
+                <p><strong>Location:</strong> <code>pytrickle/decoder.py</code>, <code>pytrickle/encoder.py</code></p>
+                <p><strong>Purpose:</strong> Convert between raw media and frame objects</p>
+                <p><strong>Key Features:</strong></p>
+                <ul>
+                    <li>PyAV-based video/audio decoding and encoding</li>
+                    <li>Multiple codec support</li>
+                    <li>Automatic format detection</li>
+                    <li>Hardware-accelerated encoding when available</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="modules">
+            <h2>Module Reference</h2>
+            
+            <div class="module-grid">
+                <div class="module-card">
+                    <h4>cli.py</h4>
+                    <p>Command-line interface for scaffolding new applications. Provides <code>pytrickle init</code> and <code>pytrickle list</code> commands.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>decorators.py</h4>
+                    <p>Decorator definitions for handler methods: <code>@video_handler</code>, <code>@audio_handler</code>, <code>@model_loader</code>, etc.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>frames.py</h4>
+                    <p>Frame data structures: <code>VideoFrame</code> and <code>AudioFrame</code> with tensor/sample data and metadata.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>api.py</h4>
+                    <p>Pydantic request/response models used by the HTTP server (e.g., StreamStartRequest, StreamParamsUpdateRequest).</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>protocol.py</h4>
+                    <p>Trickle protocol coordination: manages queues, ingress/egress loops, and monitoring events.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>subscriber.py</h4>
+                    <p>TrickleSubscriber: receives segments via HTTP GET with background preconnect and retry.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>publisher.py</h4>
+                    <p>TricklePublisher: streams encoded bytes via HTTP POST using an async queue-backed generator.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>server.py</h4>
+                    <p>HTTP server (aiohttp) exposing routes: /stream/start, /stream/stop, /stream/params, /stream/status, /health.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>manager.py</h4>
+                    <p>Stream session management and lifecycle coordination.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>fps_meter.py</h4>
+                    <p>Frame rate measurement and throttling for performance optimization.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>cache.py</h4>
+                    <p>Frame caching for efficient memory management.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>state.py</h4>
+                    <p>Stream state management and status tracking.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>utils/</h4>
+                    <p>Utility functions for media processing, tensor operations, and logging.</p>
+                </div>
+
+                <div class="module-card">
+                    <h4>registry.py</h4>
+                    <p>Handler registry for managing decorated processing functions.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="frame-objects">
+            <h2>🎞️ Frame Objects</h2>
+
+            <div class="template-card">
+                <h3>VideoFrame</h3>
+                <p>Represents a single video frame with associated metadata.</p>
+                <h4>Properties:</h4>
+                <ul>
+                    <li><strong>tensor</strong> - PyTorch tensor in (H, W, C) format</li>
+                    <li><strong>timestamp</strong> - Presentation timestamp (PTS, int)</li>
+                    <li><strong>time_base</strong> - Fraction giving the time scale for PTS</li>
+                </ul>
+                <h4>Methods:</h4>
+                <ul>
+                    <li><strong>replace_tensor(new_tensor)</strong> - Create new frame with different tensor</li>
+                    <li><strong>to_av_frame(tensor)</strong> - Convert a tensor to av.VideoFrame</li>
+                </ul>
+                <div class="code-block">
+                    <pre><code># Access video frame data
+tensor = frame.tensor  # Shape: (H, W, 3)
+
+# Process on GPU
+if torch.cuda.is_available():
+    tensor = tensor.cuda()
+    processed = my_model(tensor)
+    
+# Return processed frame
+return frame.replace_tensor(processed)</code></pre>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <h3>AudioFrame</h3>
+                <p>Represents audio samples with channel configuration.</p>
+                <h4>Properties:</h4>
+                <ul>
+                    <li><strong>samples</strong> - NumPy array of audio samples</li>
+                    <li><strong>nb_samples</strong> - Number of samples in the frame</li>
+                    <li><strong>format</strong> - Sample format (e.g., s16, fltp)</li>
+                    <li><strong>rate</strong> - Sample rate (e.g., 48000)</li>
+                    <li><strong>layout</strong> - Channel layout (e.g., mono, stereo)</li>
+                    <li><strong>timestamp</strong> and <strong>time_base</strong></li>
+                </ul>
+                <h4>Methods:</h4>
+                <ul>
+                    <li><strong>replace_samples(new_samples)</strong> - Create new frame with different samples</li>
+                    <li><strong>to_av_frame()</strong> - Convert samples back to av.AudioFrame</li>
+                </ul>
+                <div class="code-block">
+                    <pre><code># Access audio frame data
+samples = np.asarray(frame.samples)
+
+# Process audio (e.g., apply filter)
+processed = my_audio_filter(samples)
+
+# Return processed frame
+return [frame.replace_samples(processed)]</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="decorators">
+            <h2>🎨 Decorator API</h2>
+            <p>PyTrickle uses decorators to define pipeline behavior in a clean, declarative way.</p>
+
+            <div class="module-grid">
+                <div class="module-card">
+                    <h4>@model_loader</h4>
+                    <p>Called once when stream starts. Use for:</p>
+                    <ul>
+                        <li>Loading AI models</li>
+                        <li>Initializing resources</li>
+                        <li>Warming up GPU</li>
+                    </ul>
+                    <div class="code-block">
+                        <pre><code>@model_loader
+async def load(self, **kwargs):
+    self.model = load_my_model()
+    self.model.eval()</code></pre>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <h4>@video_handler</h4>
+                    <p>Called for each video frame. Use for:</p>
+                    <ul>
+                        <li>Applying filters</li>
+                        <li>Running AI inference</li>
+                        <li>Frame transformations</li>
+                    </ul>
+                    <div class="code-block">
+                        <pre><code>@video_handler
+async def handle_video(self, frame):
+    tensor = frame.tensor
+    processed = self.model(tensor)
+    return frame.replace_tensor(processed)</code></pre>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <h4>@audio_handler</h4>
+                    <p>Called for each audio frame. Use for:</p>
+                    <ul>
+                        <li>Audio effects</li>
+                        <li>Noise reduction</li>
+                        <li>Speech processing</li>
+                    </ul>
+                    <div class="code-block">
+                        <pre><code>@audio_handler
+async def handle_audio(self, frame):
+    samples = frame.samples
+    # Process audio
+    return [frame]</code></pre>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <h4>@param_updater</h4>
+                    <p>Called when parameters are updated via API. Use for:</p>
+                    <ul>
+                        <li>Real-time config changes</li>
+                        <li>Tuning processing intensity</li>
+                        <li>Enabling/disabling features</li>
+                    </ul>
+                    <div class="code-block">
+                        <pre><code>@param_updater
+async def update_params(self, params):
+    if "intensity" in params:
+        self.intensity = params["intensity"]</code></pre>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <h4>@on_stream_stop</h4>
+                    <p>Called when stream stops. Use for:</p>
+                    <ul>
+                        <li>Cleaning up resources</li>
+                        <li>Saving state</li>
+                        <li>Releasing GPU memory</li>
+                    </ul>
+                    <div class="code-block">
+                        <pre><code>@on_stream_stop
+async def on_stop(self):
+    del self.model
+    torch.cuda.empty_cache()</code></pre>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <h4>@on_stream_start</h4>
+                    <p>Called when stream starts. Use for:</p>
+                    <ul>
+                        <li>Initialisation of resource when the stream starts.</li>
+                        <li>Initiating backfround tasks</li>
+                    </ul>
+                    <div class="code-block">
+                        <pre><code>@on_stream_start
+async def on_start(self):
+    await self._initialise_background_tasks()
+    logger.info("Start request received")</code></pre>
+                    </div>
+                </div>                
+            </div>
+        </section>
+
+        <section id="workflow">
+            <h2>Pipeline Creation Workflow</h2>
+            
+            <div class="step">
+                <h3>1. Scaffold Application</h3>
+                <p>Start with a template that matches your use case:</p>
+                <div class="code-block">
+                    <pre><code># List available templates
+pytrickle list
+
+# Create new app from template
+pytrickle init my_pipeline --template passthrough</code></pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>2. Define Processing Logic</h3>
+                <p>Implement your custom handlers:</p>
+                <div class="code-block">
+                    <pre><code>class MyHandlers:
+    def __init__(self):
+        self.model = None
+    
+    @model_loader
+    async def load(self, **kwargs):
+        # Load your AI model
+        self.model = YourModel()
+        self.model.eval()
+    
+    @video_handler
+    async def handle_video(self, frame: VideoFrame):
+        # Process video frame
+        tensor = frame.tensor
+        output = self.model(tensor)
+        return frame.replace_tensor(output)
+    
+    @audio_handler
+    async def handle_audio(self, frame: AudioFrame):
+        # Process audio frame (or pass through)
+        return [frame]</code></pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>3. Configure and Run</h3>
+                <p>Set up the processor and start the server:</p>
+                <div class="code-block">
+                    <pre><code>async def main():
+    handlers = MyHandlers()
+    processor = StreamProcessor.from_handlers(
+        handlers,
+        name="my-pipeline",
+        port=8000
+    )
+    await processor.run_forever()
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())</code></pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>4. Control via HTTP API</h3>
+                <p>Start processing and manage your pipeline: (you need to have a trickle server running on <b>http://trickle:3389</b>) with video source</p>
+                <div class="code-block">
+                    <pre><code># Start processing a stream
+curl -X POST http://localhost:8000/stream/start \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subscribe_url": "http://trickle:3389/subscribe",
+    "publish_url": "http://trickle:3389/publish",
+    "gateway_request_id": "req-123",
+    "params": {"width": 512, "height": 512, "max_framerate": 30}
+  }'
+
+# Update parameters in real-time (runtime-safe fields only)
+curl -X POST http://localhost:8000/stream/params \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+
+# Get current status
+curl http://localhost:8000/stream/status
+
+# Health check
+curl http://localhost:8000/health
+
+# Stop processing
+curl -X POST http://localhost:8000/stream/stop</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="use-cases">
+            <h2>Common Use Cases</h2>
+            
+            <div class="template-card">
+                <h3>1. AI Video Enhancement</h3>
+                <p>Apply ML models for super-resolution, denoising, or style transfer</p>
+                <div class="code-block">
+                    <pre><code>@video_handler
+async def handle_video(self, frame):
+    tensor = frame.tensor.cuda()
+    enhanced = self.super_resolution_model(tensor)
+    return frame.replace_tensor(enhanced.cpu())</code></pre>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <h3>2. Object Detection Overlay</h3>
+                <p>Detect objects and draw bounding boxes on video</p>
+                <div class="code-block">
+                    <pre><code>@video_handler
+async def handle_video(self, frame):
+    detections = self.detector(frame.tensor)
+    annotated = draw_boxes(frame.tensor, detections)
+    return frame.replace_tensor(annotated)</code></pre>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <h3>3. Real-time Video Filters</h3>
+                <p>Apply color grading, effects, or artistic filters</p>
+                <div class="code-block">
+                    <pre><code>@video_handler
+async def handle_video(self, frame):
+    filtered = apply_color_grade(
+        frame.tensor,
+        intensity=self.config.intensity
+    )
+    return frame.replace_tensor(filtered)</code></pre>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <h3>4. Audio Processing</h3>
+                <p>Noise reduction, echo cancellation, or voice enhancement</p>
+                <div class="code-block">
+                    <pre><code>@audio_handler
+async def handle_audio(self, frame):
+    clean_samples = noise_reduction(
+        frame.samples,
+        noise_profile=self.noise_profile
+    )
+    return [frame.replace_samples(clean_samples)]</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="next-steps">
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="index.html">Back to Main Documentation</a></li>
+                <li><a href="https://github.com/livepeer/pytrickle/tree/main/examples" target="_blank">Explore Example Projects</a></li>
+                <li><a href="https://github.com/livepeer/pytrickle" target="_blank">View Source Code on GitHub</a></li>
+                <li><a href="https://github.com/livepeer/pytrickle/issues" target="_blank">Report Issues or Request Features</a></li>
+            </ul>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 PyTrickle. Licensed under MIT License.</p>
+            <p>Built for real-time video streaming and processing.</p>
+        </div>
+    </footer>
+</body>
+</html>
